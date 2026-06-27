@@ -258,7 +258,7 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--br
 <div id="noGameSelected" class="no-game-msg">
 <div class="big">🏒</div>
 <h2 style="color:var(--brave-gold);margin-bottom:10px">Select a Game</h2>
-<p>Choose a Canberra Brave game from the cards above to load game-specific rosters, stats, and talking points.</p>
+<p>Choose an upcoming Canberra Brave game from the cards above to load game-specific rosters, stats, and talking points.</p>
 </div>
 </div>
 
@@ -299,7 +299,6 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--br
 <button class="filter-btn active" onclick="filterSchedule('all',this)">All Games</button>
 <button class="filter-btn" onclick="filterSchedule('home',this)">Home (AIS Arena)</button>
 <button class="filter-btn" onclick="filterSchedule('away',this)">Away</button>
-<button class="filter-btn" onclick="filterSchedule('upcoming',this)">Upcoming</button>
 </div>
 <div style="overflow-x:auto;max-height:700px;overflow-y:auto">
 <table class="roster-table">
@@ -379,23 +378,6 @@ const staff=[
 ];
 
 const braveGames=[
-{date:"18 Apr",time:"16:00",away:"Canberra Brave",home:"Perth Thunder",venue:"Perth Ice Arena",round:1},
-{date:"19 Apr",time:"16:00",away:"Canberra Brave",home:"Perth Thunder",venue:"Perth Ice Arena",round:1},
-{date:"25 Apr",time:"17:00",away:"Canberra Brave",home:"Newcastle Northstars",venue:"Hunter Ice Skating Stadium",round:2},
-{date:"02 May",time:"17:00",away:"Canberra Brave",home:"Melbourne Ice",venue:"O'Brien Icehouse",round:3},
-{date:"03 May",time:"14:00",away:"Canberra Brave",home:"Melbourne Mustangs",venue:"O'Brien Icehouse",round:3},
-{date:"16 May",time:"17:00",away:"Newcastle Northstars",home:"Canberra Brave",venue:"AIS Arena",round:4},
-{date:"17 May",time:"14:00",away:"Newcastle Northstars",home:"Canberra Brave",venue:"AIS Arena",round:4},
-{date:"23 May",time:"17:00",away:"Canberra Brave",home:"Sydney Ice Dogs",venue:"Macquarie Ice Rink",round:5},
-{date:"24 May",time:"15:45",away:"Canberra Brave",home:"Central Coast Rhinos",venue:"Erina Ice Arena",round:5},
-{date:"31 May",time:"14:00",away:"Central Coast Rhinos",home:"Canberra Brave",venue:"AIS Arena",round:6},
-{date:"06 Jun",time:"17:00",away:"Melbourne Mustangs",home:"Canberra Brave",venue:"AIS Arena",round:7},
-{date:"07 Jun",time:"14:00",away:"Melbourne Mustangs",home:"Canberra Brave",venue:"AIS Arena",round:7},
-{date:"13 Jun",time:"16:45",away:"Canberra Brave",home:"Adelaide Adrenaline",venue:"Ice Arena Adelaide",round:8},
-{date:"14 Jun",time:"16:15",away:"Canberra Brave",home:"Adelaide Adrenaline",venue:"Ice Arena Adelaide",round:8},
-{date:"20 Jun",time:"17:00",away:"Perth Thunder",home:"Canberra Brave",venue:"AIS Arena",round:9},
-{date:"21 Jun",time:"14:00",away:"Perth Thunder",home:"Canberra Brave",venue:"AIS Arena",round:9},
-{date:"26 Jun",time:"19:00",away:"Adelaide Adrenaline",home:"Canberra Brave",venue:"AIS Arena",round:10},
 {date:"27 Jun",time:"17:00",away:"Adelaide Adrenaline",home:"Canberra Brave",venue:"AIS Arena",round:10},
 {date:"04 Jul",time:"17:00",away:"Canberra Brave",home:"Sydney Bears",venue:"Macquarie Ice Rink",round:11},
 {date:"05 Jul",time:"14:00",away:"Sydney Bears",home:"Canberra Brave",venue:"AIS Arena",round:11},
@@ -660,15 +642,6 @@ tbody.innerHTML='';
 let games=braveGames;
 if(filter==='home')games=braveGames.filter(g=>g.home==='Canberra Brave');
 else if(filter==='away')games=braveGames.filter(g=>g.away==='Canberra Brave');
-else if(filter==='upcoming'){
-const today=new Date('2026-06-27');
-const monthMap={'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11};
-games=braveGames.filter(g=>{
-const [day,month]=g.date.split(' ');
-const gameDate=new Date(2026,monthMap[month],parseInt(day));
-return gameDate>=today;
-});
-}
 games.forEach(g=>{
 const isHome=g.home==='Canberra Brave';
 const row=document.createElement('tr');
