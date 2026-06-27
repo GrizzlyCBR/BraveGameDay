@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canberra Brave - Game Day Commentator Platform</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--brave-red:#C41E3A;--brave-gold:#FFD700;--brave-navy:#1a1a2e;--brave-dark:#0f0f1a;--brave-light:#f0f0f5;--accent:#e63946;--success:#2ecc71;--warning:#f39c12;--info:#3498db}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--brave-dark);color:var(--brave-light);min-height:100vh}
+.header{background:linear-gradient(135deg,var(--brave-navy) 0%,var(--brave-red) 100%);padding:15px 25px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--brave-gold);position:sticky;top:0;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+.header h1{font-size:1.4rem;color:var(--brave-gold);text-transform:uppercase;letter-spacing:2px}
+.header .subtitle{font-size:.75rem;color:rgba(255,255,255,0.7);margin-top:2px}
+.live-indicator{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.3);padding:8px 16px;border-radius:20px;border:1px solid var(--brave-gold)}
+.live-dot{width:10px;height:10px;background:var(--success);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.2)}}
+.nav-tabs{display:flex;background:var(--brave-navy);border-bottom:2px solid var(--brave-red);overflow-x:auto;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{padding:14px 22px;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,0.6);font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;border-bottom:3px solid transparent}
+.nav-tab:hover{color:var(--brave-gold);background:rgba(196,30,58,0.1)}
+.nav-tab.active{color:var(--brave-gold);border-bottom-color:var(--brave-gold);background:rgba(196,30,58,0.2)}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.section{display:none}
+.section.active{display:block;animation:fadeIn .4s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card{background:linear-gradient(145deg,#1a1a2e 0%,#16213e 100%);border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid rgba(255,215,0,0.1);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.card-title{font-size:1.2rem;color:var(--brave-gold);margin-bottom:15px;display:flex;align-items:center;gap:10px;text-transform:uppercase;letter-spacing:1px}
+.game-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:15px;margin-bottom:25px}
+.game-card{background:linear-gradient(145deg,#1a1a2e,#0f3460);border-radius:10px;padding:18px;cursor:pointer;border:2px solid transparent;transition:all .3s;position:relative;overflow:hidden}
+.game-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brave-red),var(--brave-gold));opacity:0;transition:opacity .3s}
+.game-card:hover{border-color:var(--brave-gold);transform:translateY(-3px);box-shadow:0 10px 30px rgba(196,30,58,0.2)}
+.game-card:hover::before{opacity:1}
+.game-card.selected{border-color:var(--brave-gold);background:linear-gradient(145deg,#1a1a2e,#c41e3a22)}
+.game-card.selected::before{opacity:1}
+.game-card .date-badge{display:inline-block;background:var(--brave-red);color:white;padding:4px 12px;border-radius:4px;font-size:.8rem;font-weight:700;margin-bottom:10px}
+.game-card .matchup{font-size:1.15rem;font-weight:700;margin-bottom:6px}
+.game-card .meta{font-size:.85rem;color:rgba(255,255,255,0.5);display:flex;gap:15px;flex-wrap:wrap}
+.game-card .meta span{display:flex;align-items:center;gap:5px}
+.game-card .home-tag{background:rgba(46,204,113,0.2);color:#2ecc71;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:700}
+.game-card .away-tag{background:rgba(52,152,219,0.2);color:#3498db;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:700}
+.matchup-header{background:linear-gradient(145deg,#1a1a2e,#0f3460);border-radius:12px;padding:30px;text-align:center;margin-bottom:25px;border:2px solid rgba(255,215,0,0.3);position:relative;overflow:hidden}
+.matchup-header::after{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--brave-red),var(--brave-gold),var(--brave-red))}
+.matchup-header .teams-row{display:flex;justify-content:center;align-items:center;gap:40px;margin:15px 0;flex-wrap:wrap}
+.matchup-header .team-block{text-align:center}
+.matchup-header .team-name{font-size:2rem;font-weight:800}
+.matchup-header .team-record{font-size:.9rem;color:rgba(255,255,255,0.6);margin-top:4px}
+.matchup-header .vs-block{font-size:1.3rem;color:var(--brave-gold);font-weight:700;background:rgba(0,0,0,0.3);padding:10px 20px;border-radius:50px;border:2px solid var(--brave-gold)}
+.matchup-header .matchup-meta{color:rgba(255,255,255,0.7);font-size:1rem;margin-top:10px;display:flex;justify-content:center;gap:30px;flex-wrap:wrap}
+.roster-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.roster-table th{background:var(--brave-red);color:white;padding:12px 15px;text-align:left;font-weight:600;text-transform:uppercase;font-size:.8rem;letter-spacing:1px}
+.roster-table th:first-child{border-radius:8px 0 0 0}
+.roster-table th:last-child{border-radius:0 8px 0 0}
+.roster-table td{padding:12px 15px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.roster-table tr:hover td{background:rgba(196,30,58,0.1)}
+.roster-table .num{font-weight:700;color:var(--brave-gold);font-size:1.1rem}
+.roster-table .pos-badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:.75rem;font-weight:700}
+.pos-f{background:rgba(46,204,113,0.2);color:#2ecc71}
+.pos-d{background:rgba(52,152,219,0.2);color:#3498db}
+.pos-g{background:rgba(231,76,60,0.2);color:#e74c3c}
+.notes-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:.7rem;margin-left:5px}
+.tag-c{background:var(--brave-gold);color:var(--brave-dark);font-weight:700}
+.tag-a{background:#3498db;color:white}
+.tag-im{background:#9b59b6;color:white}
+.tag-ir{background:#e74c3c;color:white}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:20px}
+.stat-box{background:linear-gradient(145deg,#1a1a2e,#0f3460);border-radius:10px;padding:18px;text-align:center;border:1px solid rgba(255,215,0,0.1);transition:transform .3s}
+.stat-box:hover{transform:translateY(-5px)}
+.stat-box .value{font-size:2.2rem;font-weight:800;color:var(--brave-gold);line-height:1}
+.stat-box .label{font-size:.8rem;color:rgba(255,255,255,0.6);margin-top:6px;text-transform:uppercase;letter-spacing:1px}
+.player-watch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px}
+.player-watch-card{background:linear-gradient(145deg,#1a1a2e,#16213e);border-radius:10px;padding:16px;border-left:4px solid var(--brave-gold);transition:all .3s}
+.player-watch-card:hover{transform:translateX(5px);box-shadow:0 5px 20px rgba(196,30,58,0.2)}
+.player-watch-card .name{font-size:1.05rem;font-weight:700;color:var(--brave-light);margin-bottom:4px}
+.player-watch-card .details{font-size:.85rem;color:rgba(255,255,255,0.6);margin-bottom:6px}
+.player-watch-card .notes{font-size:.8rem;color:var(--brave-gold);font-style:italic}
+.form-bar{display:flex;gap:8px;align-items:center;margin-top:8px}
+.form-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:white}
+.form-w{background:#2ecc71}
+.form-l{background:#e74c3c}
+.form-otw{background:#f39c12}
+.form-otl{background:#9b59b6}
+.injury-banner{background:linear-gradient(90deg,rgba(231,76,60,0.2),rgba(231,76,60,0.05));border-left:4px solid #e74c3c;padding:15px;border-radius:0 8px 8px 0;margin-bottom:15px}
+.injury-banner .title{color:#e74c3c;font-weight:700;margin-bottom:5px}
+.quick-notes{background:#0f0f1a;border-radius:10px;padding:15px;border:1px solid rgba(255,215,0,0.2)}
+.quick-notes textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;color:var(--brave-light);font-size:.9rem;resize:vertical;min-height:120px;font-family:inherit}
+.quick-notes textarea:focus{outline:none;border-color:var(--brave-gold)}
+.btn{background:linear-gradient(135deg,var(--brave-red),#e63946);color:white;border:none;padding:10px 24px;border-radius:6px;font-weight:600;cursor:pointer;transition:all .3s;text-transform:uppercase;letter-spacing:1px;font-size:.85rem}
+.btn:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(196,30,58,0.4)}
+.btn-secondary{background:transparent;border:2px solid var(--brave-gold);color:var(--brave-gold)}
+.btn-secondary:hover{background:var(--brave-gold);color:var(--brave-dark)}
+.filter-bar{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.filter-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.8rem;transition:all .3s}
+.filter-btn:hover,.filter-btn.active{background:var(--brave-red);color:white;border-color:var(--brave-red)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}.three-col{grid-template-columns:1fr}.game-selector{grid-template-columns:1fr}}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--brave-dark)}
+::-webkit-scrollbar-thumb{background:var(--brave-red);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--brave-gold)}
+.refresh-bar{background:rgba(196,30,58,0.1);border:1px solid rgba(196,30,58,0.3);border-radius:8px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.refresh-bar .last-updated{font-size:.85rem;color:rgba(255,255,255,0.6)}
+.refresh-bar .source-links a{color:var(--brave-gold);text-decoration:none;margin-left:15px;font-size:.85rem}
+.refresh-bar .source-links a:hover{text-decoration:underline}
+.head-to-head{background:rgba(255,255,255,0.03);border-radius:8px;padding:15px;margin-top:10px}
+.head-to-head .h2h-title{color:var(--brave-gold);font-weight:700;margin-bottom:8px;font-size:.95rem}
+.head-to-head .h2h-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem}
+.head-to-head .h2h-row:last-child{border-bottom:none}
+.talking-point{background:rgba(255,255,255,0.03);border-radius:8px;padding:12px 15px;margin-bottom:10px;border-left:3px solid var(--brave-gold)}
+.talking-point strong{color:var(--brave-gold);font-size:.9rem}
+.talking-point p{color:rgba(255,255,255,0.7);font-size:.85rem;margin-top:4px;line-height:1.5}
+.venue-note{background:rgba(52,152,219,0.1);border-left:3px solid #3498db;border-radius:0 8px 8px 0;padding:12px 15px;margin-bottom:10px;font-size:.85rem;color:rgba(255,255,255,0.8)}
+.no-game-msg{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.4)}
+.no-game-msg .big{font-size:4rem;margin-bottom:15px}
+</style>
+</head>
+<body>
+<div class="header">
+<div>
+<h1>Canberra Brave - Game Day Platform</h1>
+<div class="subtitle">AIHL 2026 Season | Commentator Tools</div>
+</div>
+<div class="live-indicator">
+<div class="live-dot"></div>
+<span style="font-weight:700;color:var(--brave-gold)">LIVE</span>
+<span style="font-size:.8rem;color:rgba(255,255,255,0.6)">27 Jun 2026</span>
+</div>
+</div>
+
+<div class="nav-tabs">
+<button class="nav-tab active" onclick="showSection('game-day',this)">Game Day</button>
+<button class="nav-tab" onclick="showSection('brave-roster',this)">Brave Roster</button>
+<button class="nav-tab" onclick="showSection('schedule',this)">Schedule</button>
+<button class="nav-tab" onclick="showSection('notes',this)">My Notes</button>
+</div>
+
+<div class="container">
+
+<div class="refresh-bar">
+<span class="last-updated">Last updated: 27 June 2026 | theaihl.com | icehockeynewsaustralia.com</span>
+<div class="source-links">
+<a href="https://www.theaihl.com/leagues/stats_hockey.cfm?clientid=3856&leagueid=11464" target="_blank">Live Stats</a>
+<a href="https://www.theaihl.com/leagues/schedules.cfm?clientid=3856&leagueid=11464" target="_blank">Schedule</a>
+<a href="https://aihl.tv/" target="_blank">AIHL.TV</a>
+</div>
+</div>
+
+<!-- GAME DAY -->
+<div id="game-day" class="section active">
+<div class="card">
+<div class="card-title">Select Game</div>
+<div class="game-selector" id="gameSelector"></div>
+</div>
+
+<div id="gameDetailPanel" style="display:none">
+
+<!-- MATCHUP HEADER -->
+<div class="matchup-header">
+<div style="color:rgba(255,255,255,0.6);font-size:.9rem;text-transform:uppercase;letter-spacing:2px">Game Day Matchup</div>
+<div class="teams-row">
+<div class="team-block">
+<div class="team-name" id="detailAwayTeam" style="color:#3498db"></div>
+<div class="team-record" id="detailAwayRecord"></div>
+<div class="form-bar" id="detailAwayForm"></div>
+</div>
+<div class="vs-block">VS</div>
+<div class="team-block">
+<div class="team-name" id="detailHomeTeam" style="color:#e74c3c"></div>
+<div class="team-record" id="detailHomeRecord"></div>
+<div class="form-bar" id="detailHomeForm"></div>
+</div>
+</div>
+<div class="matchup-meta">
+<span id="detailDate"></span>
+<span id="detailVenue"></span>
+<span id="detailRound"></span>
+</div>
+</div>
+
+<!-- GAME-SPECIFIC STATS -->
+<div class="two-col">
+<div class="card">
+<div class="card-title">Canberra Brave - Season Snapshot</div>
+<div class="stats-grid">
+<div class="stat-box"><div class="value">9</div><div class="label">GP</div></div>
+<div class="stat-box"><div class="value">2</div><div class="label">Wins</div></div>
+<div class="stat-box"><div class="value">9</div><div class="label">Points</div></div>
+<div class="stat-box"><div class="value">8th</div><div class="label">League Pos</div></div>
+</div>
+<div class="head-to-head">
+<div class="h2h-title">Head-to-Head vs <span id="h2hOpponent"></span></div>
+<div id="h2hContent"></div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Opponent - Season Snapshot</div>
+<div class="stats-grid" id="opponentStatsGrid"></div>
+<div class="head-to-head">
+<div class="h2h-title">Opponent Form (Last 5)</div>
+<div class="form-bar" id="opponentFormBar"></div>
+<div id="opponentRecentResults" style="margin-top:10px;font-size:.85rem;color:rgba(255,255,255,0.7)"></div>
+</div>
+</div>
+</div>
+
+<!-- ROSTERS FOR THIS GAME -->
+<div class="two-col">
+<div class="card">
+<div class="card-title">Canberra Brave Roster</div>
+<div class="filter-bar">
+<button class="filter-btn active" onclick="filterRoster('all',this)">All</button>
+<button class="filter-btn" onclick="filterRoster('F',this)">Forwards</button>
+<button class="filter-btn" onclick="filterRoster('D',this)">Defense</button>
+<button class="filter-btn" onclick="filterRoster('G',this)">Goalies</button>
+</div>
+<div style="overflow-x:auto">
+<table class="roster-table">
+<thead><tr><th>#</th><th>Player</th><th>Pos</th><th>S/C</th><th>Notes</th></tr></thead>
+<tbody id="braveRosterBody"></tbody>
+</table>
+</div>
+<div class="injury-banner" style="margin-top:15px">
+<div class="title">Inactive / Injured</div>
+<div id="braveInactive"></div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Opponent Roster</div>
+<div id="opponentRosterInfo">
+<p style="color:rgba(255,255,255,0.5);font-size:.85rem;margin-bottom:10px">Full opponent roster available at theaihl.com. Key players to watch for this matchup:</p>
+<div class="player-watch-grid" id="opponentWatchGrid"></div>
+</div>
+</div>
+</div>
+
+<!-- GAME-SPECIFIC TALKING POINTS -->
+<div class="card">
+<div class="card-title">Game-Specific Talking Points</div>
+<div id="talkingPointsContainer"></div>
+</div>
+
+<!-- VENUE & CONTEXT -->
+<div class="two-col">
+<div class="card">
+<div class="card-title">Venue Notes</div>
+<div id="venueNotesContainer"></div>
+</div>
+<div class="card">
+<div class="card-title">Key Matchup Stats to Mention</div>
+<div id="keyStatsContainer"></div>
+</div>
+</div>
+
+</div>
+
+<div id="noGameSelected" class="no-game-msg">
+<div class="big">🏒</div>
+<h2 style="color:var(--brave-gold);margin-bottom:10px">Select a Game</h2>
+<p>Choose a Canberra Brave game from the cards above to load game-specific rosters, stats, and talking points.</p>
+</div>
+</div>
+
+<!-- BRAVE ROSTER -->
+<div id="brave-roster" class="section">
+<div class="card">
+<div class="card-title">Canberra Brave - Full Roster 2026</div>
+<div class="filter-bar">
+<button class="filter-btn active" onclick="filterFullRoster('all',this)">All</button>
+<button class="filter-btn" onclick="filterFullRoster('F',this)">Forwards</button>
+<button class="filter-btn" onclick="filterFullRoster('D',this)">Defense</button>
+<button class="filter-btn" onclick="filterFullRoster('G',this)">Goalies</button>
+<button class="filter-btn" onclick="filterFullRoster('new',this)">New Signings</button>
+</div>
+<div style="overflow-x:auto">
+<table class="roster-table">
+<thead><tr><th>#</th><th>Player</th><th>Pos</th><th>S/C</th><th>Status</th><th>Notes</th></tr></thead>
+<tbody id="fullRosterBody"></tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<div class="card-title">Coaching & Support Staff</div>
+<div style="overflow-x:auto">
+<table class="roster-table">
+<thead><tr><th>Name</th><th>Role</th></tr></thead>
+<tbody id="staffBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- SCHEDULE -->
+<div id="schedule" class="section">
+<div class="card">
+<div class="card-title">Canberra Brave - 2026 Schedule</div>
+<div class="filter-bar">
+<button class="filter-btn active" onclick="filterSchedule('all',this)">All Games</button>
+<button class="filter-btn" onclick="filterSchedule('home',this)">Home (AIS Arena)</button>
+<button class="filter-btn" onclick="filterSchedule('away',this)">Away</button>
+<button class="filter-btn" onclick="filterSchedule('upcoming',this)">Upcoming</button>
+</div>
+<div style="overflow-x:auto;max-height:700px;overflow-y:auto">
+<table class="roster-table">
+<thead><tr><th>Date</th><th>Time</th><th>Away</th><th>Home</th><th>Venue</th></tr></thead>
+<tbody id="scheduleBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- NOTES -->
+<div id="notes" class="section">
+<div class="card">
+<div class="card-title">Commentator Notes</div>
+<p style="color:rgba(255,255,255,0.6);margin-bottom:15px">Game-specific notes save automatically to your browser.</p>
+<div class="quick-notes">
+<textarea id="commentaryNotes" placeholder="Enter your commentary notes here..."></textarea>
+</div>
+<div style="display:flex;gap:10px;margin-top:15px">
+<button class="btn" onclick="saveNotes()">Save Notes</button>
+<button class="btn btn-secondary" onclick="clearNotes()">Clear</button>
+<button class="btn btn-secondary" onclick="exportNotes()">Export</button>
+</div>
+<div id="saveStatus" style="margin-top:10px;font-size:.85rem"></div>
+</div>
+</div>
+
+</div>
+
+<script>
+const braveRoster=[
+{no:3,name:"Mitchell Henning",pos:"F",sc:"R",notes:"A"},
+{no:4,name:"Lachlan Fahmy",pos:"D",sc:"L",notes:""},
+{no:6,name:"Noah Harvey",pos:"F",sc:"L",notes:""},
+{no:7,name:"Bayley Kubara",pos:"D",sc:"R",notes:"A"},
+{no:8,name:"Cameron Marks",pos:"D",sc:"R",notes:"IM, IR"},
+{no:10,name:"Scott Clemie",pos:"F",sc:"L",notes:""},
+{no:11,name:"Peter Bates",pos:"F",sc:"L",notes:"IM"},
+{no:12,name:"Thomas Harrow",pos:"F",sc:"L",notes:""},
+{no:14,name:"Charlie York",pos:"F",sc:"R",notes:""},
+{no:15,name:"Casey Kubara",pos:"F",sc:"R",notes:""},
+{no:17,name:"Thomas Steven",pos:"F",sc:"R",notes:""},
+{no:19,name:"Jake Ratcliffe",pos:"F",sc:"R",notes:""},
+{no:21,name:"Matt Buskas",pos:"D",sc:"L",notes:""},
+{no:22,name:"Carson Miller",pos:"F",sc:"R",notes:"IM"},
+{no:24,name:"Jacob Carey",pos:"F",sc:"R",notes:""},
+{no:26,name:"Bray Crowder",pos:"D",sc:"R",notes:""},
+{no:29,name:"Alexandre Tetreault",pos:"G",sc:"L",notes:""},
+{no:30,name:"Victor Sjodin",pos:"G",sc:"L",notes:""},
+{no:34,name:"Joel Hasselman",pos:"G",sc:"L",notes:""},
+{no:38,name:"Dominic Canic",pos:"F",sc:"L",notes:"IM"},
+{no:42,name:"Jackson Gallagher",pos:"F",sc:"L",notes:""},
+{no:43,name:"Bodhi Matthew",pos:"D",sc:"L",notes:""},
+{no:47,name:"Justin Maylan",pos:"F",sc:"R",notes:"IM"},
+{no:64,name:"Kai Miettinen",pos:"F",sc:"L",notes:"C"},
+{no:71,name:"Jordon Brunt",pos:"D",sc:"L",notes:""},
+{no:90,name:"Matt Marasco",pos:"D",sc:"L",notes:""},
+{no:91,name:"Henry York",pos:"F",sc:"R",notes:""},
+{no:93,name:"Ethan Elford",pos:"D",sc:"R",notes:""},
+{no:94,name:"Cameron Todd",pos:"F",sc:"R",notes:""}
+];
+
+const braveInactive=[
+{name:"Nick Christensen",notes:"A - Out injured (ruptured ACL), expected to miss rest of season"},
+{name:"Brayden Low",notes:"IM - Played eight games between April and May before leaving the club"}
+];
+
+const staff=[
+{name:"Stuart Philps",role:"Head coach"},
+{name:"Timothy Cox",role:"Assistant coach"},
+{name:"Darryl Day",role:"Equipment manager"},
+{name:"Sam Elliott",role:"Equipment manager"},
+{name:"Shane Lenson",role:"Medical"},
+{name:"Jonathon Carey",role:"Physio"},
+{name:"Callam Smyth",role:"Physio"},
+{name:"Brent Russ",role:"Sports trainer"}
+];
+
+const braveGames=[
+{date:"18 Apr",time:"16:00",away:"Canberra Brave",home:"Perth Thunder",venue:"Perth Ice Arena",round:1},
+{date:"19 Apr",time:"16:00",away:"Canberra Brave",home:"Perth Thunder",venue:"Perth Ice Arena",round:1},
+{date:"25 Apr",time:"17:00",away:"Canberra Brave",home:"Newcastle Northstars",venue:"Hunter Ice Skating Stadium",round:2},
+{date:"02 May",time:"17:00",away:"Canberra Brave",home:"Melbourne Ice",venue:"O'Brien Icehouse",round:3},
+{date:"03 May",time:"14:00",away:"Canberra Brave",home:"Melbourne Mustangs",venue:"O'Brien Icehouse",round:3},
+{date:"16 May",time:"17:00",away:"Newcastle Northstars",home:"Canberra Brave",venue:"AIS Arena",round:4},
+{date:"17 May",time:"14:00",away:"Newcastle Northstars",home:"Canberra Brave",venue:"AIS Arena",round:4},
+{date:"23 May",time:"17:00",away:"Canberra Brave",home:"Sydney Ice Dogs",venue:"Macquarie Ice Rink",round:5},
+{date:"24 May",time:"15:45",away:"Canberra Brave",home:"Central Coast Rhinos",venue:"Erina Ice Arena",round:5},
+{date:"31 May",time:"14:00",away:"Central Coast Rhinos",home:"Canberra Brave",venue:"AIS Arena",round:6},
+{date:"06 Jun",time:"17:00",away:"Melbourne Mustangs",home:"Canberra Brave",venue:"AIS Arena",round:7},
+{date:"07 Jun",time:"14:00",away:"Melbourne Mustangs",home:"Canberra Brave",venue:"AIS Arena",round:7},
+{date:"13 Jun",time:"16:45",away:"Canberra Brave",home:"Adelaide Adrenaline",venue:"Ice Arena Adelaide",round:8},
+{date:"14 Jun",time:"16:15",away:"Canberra Brave",home:"Adelaide Adrenaline",venue:"Ice Arena Adelaide",round:8},
+{date:"20 Jun",time:"17:00",away:"Perth Thunder",home:"Canberra Brave",venue:"AIS Arena",round:9},
+{date:"21 Jun",time:"14:00",away:"Perth Thunder",home:"Canberra Brave",venue:"AIS Arena",round:9},
+{date:"26 Jun",time:"19:00",away:"Adelaide Adrenaline",home:"Canberra Brave",venue:"AIS Arena",round:10},
+{date:"27 Jun",time:"17:00",away:"Adelaide Adrenaline",home:"Canberra Brave",venue:"AIS Arena",round:10},
+{date:"04 Jul",time:"17:00",away:"Canberra Brave",home:"Sydney Bears",venue:"Macquarie Ice Rink",round:11},
+{date:"05 Jul",time:"14:00",away:"Sydney Bears",home:"Canberra Brave",venue:"AIS Arena",round:11},
+{date:"19 Jul",time:"15:45",away:"Canberra Brave",home:"Brisbane Lightning",venue:"Iceworld Boondall",round:12},
+{date:"26 Jul",time:"14:00",away:"Sydney Ice Dogs",home:"Canberra Brave",venue:"AIS Arena",round:13},
+{date:"01 Aug",time:"15:45",away:"Canberra Brave",home:"Central Coast Rhinos",venue:"Erina Ice Arena",round:14},
+{date:"02 Aug",time:"17:00",away:"Central Coast Rhinos",home:"Canberra Brave",venue:"AIS Arena",round:14},
+{date:"08 Aug",time:"17:00",away:"Melbourne Ice",home:"Canberra Brave",venue:"AIS Arena",round:15},
+{date:"09 Aug",time:"13:00",away:"Melbourne Ice",home:"Canberra Brave",venue:"AIS Arena",round:15},
+{date:"15 Aug",time:"17:00",away:"Canberra Brave",home:"Newcastle Northstars",venue:"Hunter Ice Skating Stadium",round:16},
+{date:"16 Aug",time:"14:00",away:"Brisbane Lightning",home:"Canberra Brave",venue:"AIS Arena",round:16},
+{date:"22 Aug",time:"17:00",away:"Canberra Brave",home:"Melbourne Ice",venue:"O'Brien Icehouse",round:17},
+{date:"23 Aug",time:"14:00",away:"Canberra Brave",home:"Melbourne Mustangs",venue:"O'Brien Icehouse",round:17}
+];
+
+const teamData={
+"Newcastle Northstars":{gp:11,w:8,otw:1,otl:0,l:2,pts:26,form:['W','W','W','W','W'],record:"8-2-1",keyPlayers:["Danick Bouchard (#83, IM - League scoring leader, 83 pts)","Wehebe Darge (Veteran forward, clutch performer)","Francis Drolet (Veteran D, solid two-way)"],venueNote:"Hunter Ice Skating Stadium - Newcastle's fortress. Loud crowd, fast ice. Brave have struggled here historically.",talkingPoints:["Newcastle sits atop the table with 26 points - the team to beat","Danick Bouchard is the league's most dangerous scorer - Brave D must contain him","Northstars have won 5 straight - red hot form coming in","Casey Kubara faces his former team - narrative gold","Brave are 8th, Northstars are 1st - massive underdog story"]},
+"Perth Thunder":{gp:10,w:6,otw:1,otl:2,l:1,pts:22,form:['W','W','OTW','L','W'],record:"6-1-2",keyPlayers:["Benjamin Breault (IM forward, key offensive piece)","Finlay Gordon (IM, dangerous in offensive zone)","Robert Haselhurst (Veteran D, physical presence)"],venueNote:"Perth Ice Arena - Long road trip for Brave. Jet lag and travel fatigue are real factors. Perth has strong home support.",talkingPoints:["Perth sits 2nd with 22 points - only 1 regulation loss all season","Thunder are tough at home - Brave need a fast start","Goaltending battle: Sjodin/Tetreault vs Perth's netminder","Perth's physical style - Brave must match intensity","Last meeting: Brave swept in Perth opening weekend"]},
+"Sydney Ice Dogs":{gp:9,w:6,otw:1,otl:0,l:2,pts:20,form:['W','W','L','W','W'],record:"6-2-1",keyPlayers:["Ryan Burroughs (IM signing, offensive threat)","Shane Hanna (IM D from Starbulls Rosenheim, strong two-way)","David D'Agostino (IM from Nijmegen Devils, creative playmaker)"],venueNote:"Macquarie Ice Rink - Sydney's home. Neutral ice surface, good sightlines for commentators.",talkingPoints:["Ice Dogs are 3rd with 20 points - flying under the radar","Three import signings give them serious firepower","Brave vs Ice Dogs - two teams with new-look rosters","Special teams could decide this one","Both teams fighting for playoff positioning"]},
+"Melbourne Mustangs":{gp:11,w:6,otw:1,otl:0,l:4,pts:20,form:['W','L','W','W','L'],record:"6-4-1",keyPlayers:["Scott Timmins (Veteran leader, experienced campaigner)","Artem Astafiev (IM forward, skilled offensive player)","Maksim Astafiyev (IM, dangerous scoring threat)"],venueNote:"O'Brien Icehouse - Melbourne's premier facility. Excellent ice conditions. Neutral venue for both teams if Brave are 'home'.",talkingPoints:["Mustangs are 4th with 20 points - tight race in the middle","Scott Timmins provides veteran leadership - Brave youth vs experience","Melbourne derby feel even with Brave as visitors","Mustangs have offensive depth - Brave D must stay disciplined","Playoff implications - both teams need these points"]},
+"Central Coast Rhinos":{gp:12,w:6,otw:1,otl:0,l:5,pts:20,form:['L','W','W','L','W'],record:"6-5-1",keyPlayers:["Tyler Kubara (Returning D, mobile blue liner)","Riley White (Returning forward, consistent producer)","New import additions looking to make impact"],venueNote:"Erina Ice Arena - Smaller venue, intimate atmosphere. Can get loud. Brave need to silence the home crowd early.",talkingPoints:["Rhinos are 5th with 20 points - surprise package this season","Tyler Kubara - local product, knows Brave system well","Rhinos have been competitive against everyone","Brave looking for revenge after early season losses","Central Coast's home form has been strong"]},
+"Sydney Bears":{gp:11,w:5,otw:1,otl:1,l:4,pts:18,form:['W','L','W','OTL','W'],record:"5-4-2",keyPlayers:["Brian Chambers (IM from Allen Americans, power forward)","Louis Olive (IM from Corsaires de Dunkerque, offensive skill)","Lucas Herrmann (IM from Etoile Noire de Strasbourg, speedy winger)"],venueNote:"Macquarie Ice Rink - Bears share venue with Ice Dogs. Familiar territory for Sydney teams.",talkingPoints:["Bears are 6th with 18 points - three strong imports","Brian Chambers is a power forward - physical matchup ahead","Sydney derby atmosphere - Bears vs Brave always intense","Bears returned to AIHL this season - great story for commentary","Brave need to exploit Bears' defensive inconsistencies"]},
+"Brisbane Lightning":{gp:11,w:3,otw:0,otl:1,l:7,pts:10,form:['L','L','W','L','L'],record:"3-7-1",keyPlayers:["Grant Hebert (IM from Norfolk Admirals, top line talent)","Tanner Hopps (#42 IM, key forward with offensive upside)","Batu Gendunov (Returning player, solid two-way game)"],venueNote:"Iceworld Boondall - Brisbane's home. Warm climate venue, ice can be softer. Brave need to adjust.",talkingPoints:["Lightning are 7th with 10 points - struggling but dangerous","Grant Hebert and Tanner Hopps provide offensive spark","Brisbane at home is always tough - travel factor for Brave","Brave should be favorites but can't underestimate Lightning","Tanner Hopps wears #42 - same as Jackson Gallagher for Brave"]},
+"Melbourne Ice":{gp:11,w:2,otw:0,otl:2,l:7,pts:8,form:['L','L','OTL','L','L'],record:"2-7-2",keyPlayers:["Lachlan Hodge (New signing from Melbourne Blackhawks, young talent)","Jamie Bourke (Veteran forward, leadership presence)","Lliam Webster (Veteran D, physical stay-at-home style)"],venueNote:"O'Brien Icehouse - Melbourne Ice share the facility with Mustangs. Good ice, professional setup.",talkingPoints:["Ice are 9th with 8 points - having a tough season","Lachlan Hodge is a young player to watch - future star","Jamie Bourke and Lliam Webster provide veteran presence","Brave should target this as a winnable game","Melbourne Ice looking to play spoiler role"]},
+"Adelaide Adrenaline":{gp:9,w:0,otw:1,otl:1,l:7,pts:3,form:['OTL','L','L','L','L'],record:"0-7-2",keyPlayers:["Vyacheslav Sarkisyants (IM from Beibarys Atyrau, offensive catalyst)","Austin Pickford (IM from Danbury Hat Tricks, scoring threat)","Darcy Flanagan (Returning D, reliable blue liner)"],venueNote:"Ice Arena Adelaide - Adelaide's home. Brave making the long trip. Adrenaline desperate for their first win.",talkingPoints:["Adrenaline are 10th with 3 points - still searching for first win","Don't let the record fool you - Adrenaline have talent","Vyacheslav Sarkisyants can change a game in one shift","Brave must avoid complacency against last-place team","Adelaide desperate - they'll come out hard early"]},
+"Canberra Brave":{gp:9,w:2,otw:1,otl:1,l:5,pts:9,form:['L','L','OTW','L','L'],record:"2-5-2",keyPlayers:["Kai Miettinen (C, #64 - Captain and offensive leader)","Casey Kubara (#15 - New signing, proven scorer)","Bayley Kubara (A, #7 - Defensive anchor)","Victor Sjodin (#30 - Key goaltender)"],venueNote:"AIS Arena - Brave's home fortress. Strong crowd support, familiar surroundings.",talkingPoints:["Brave are 8th with 9 points - need to climb the ladder","Kai Miettinen leads by example - captain's performances crucial","Casey Kubara adds scoring punch from Newcastle","Home form at AIS Arena needs to improve","Playoffs start 28 Aug - every point matters now"]}
+};
+
+const venueInfo={
+"AIS Arena":{city:"Canberra",capacity:"~5,000",surface:"Standard NHL size",notes:"Brave's home. Excellent facilities, strong crowd when Brave are winning. Good sightlines for commentators."},
+"Perth Ice Arena":{city:"Perth",capacity:"~1,500",surface:"Standard",notes:"Longest road trip in AIHL. Brave usually play back-to-back games here. Time zone difference is 2 hours behind Canberra."},
+"Hunter Ice Skating Stadium":{city:"Newcastle",capacity:"~1,000",surface:"Standard",notes:"Northstars' home. Very loud, passionate crowd. Can be intimidating for visiting teams. Fast ice surface."},
+"O'Brien Icehouse":{city:"Melbourne",capacity:"~1,000",surface:"Olympic size",notes:"Premier facility in Australia. Olympic-sized ice surface - wider game, more skating room. Hosts Goodall Cup finals."},
+"Macquarie Ice Rink":{city:"Sydney",capacity:"~2,000",surface:"Standard",notes:"Shared by Bears and Ice Dogs. Good facilities in Sydney's north. Strong junior hockey presence."},
+"Erina Ice Arena":{city:"Central Coast",capacity:"~500",surface:"Standard",notes:"Smaller, intimate venue. Gets very loud. Rhinos have strong community support. Can be a tough place to play."},
+"Ice Arena Adelaide":{city:"Adelaide",capacity:"~1,500",surface:"Standard",notes:"Adrenaline's home. Brave's longest road trip along with Perth. Adrenaline crowd is passionate despite team's struggles."},
+"Iceworld Boondall":{city:"Brisbane",capacity:"~800",surface:"Standard",notes:"Brisbane's home. Warmer climate can affect ice quality. Lightning have been building a solid fan base."}
+};
+
+function showSection(id,btn){
+document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+btn.classList.add('active');
+}
+
+function renderRosterTable(data,containerId,showStatus){
+const tbody=document.getElementById(containerId);
+tbody.innerHTML='';
+data.forEach(p=>{
+const posClass=p.pos==='F'?'pos-f':p.pos==='D'?'pos-d':'pos-g';
+let notesHtml='';
+if(p.notes){
+p.notes.split(',').forEach(n=>{
+const tag=n.trim();
+let tagClass='';
+if(tag==='C')tagClass='tag-c';
+else if(tag==='A')tagClass='tag-a';
+else if(tag==='IM')tagClass='tag-im';
+else if(tag==='IR')tagClass='tag-ir';
+if(tagClass)notesHtml+=`<span class="notes-tag ${tagClass}">${tag}</span>`;
+});
+}
+let status='';
+if(showStatus){
+if(p.notes.includes('IM'))status='<span style="color:#9b59b6">Import</span>';
+else if(p.notes.includes('IR'))status='<span style="color:#e74c3c">Injured</span>';
+else status='<span style="color:#2ecc71">Active</span>';
+}
+const row=document.createElement('tr');
+row.innerHTML=`<td class="num">${p.no||'-'}</td><td><strong>${p.name}</strong></td><td><span class="pos-badge ${posClass}">${p.pos}</span></td><td>${p.sc}</td>${showStatus?`<td>${status}</td>`:''}<td>${notesHtml}</td>`;
+tbody.appendChild(row);
+});
+}
+
+function filterRoster(pos,btn){
+document.querySelectorAll('#game-day .filter-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const filtered=pos==='all'?braveRoster:braveRoster.filter(p=>p.pos===pos);
+renderRosterTable(filtered,'braveRosterBody',false);
+}
+
+function filterFullRoster(filter,btn){
+document.querySelectorAll('#brave-roster .filter-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+let filtered=braveRoster;
+if(filter==='F'||filter==='D'||filter==='G'){
+filtered=braveRoster.filter(p=>p.pos===filter);
+}else if(filter==='new'){
+const newSignings=["Peter Bates","Jackson Gallagher","Casey Kubara","Brayden Low","Justin Maylan","Carson Miller"];
+filtered=braveRoster.filter(p=>newSignings.includes(p.name));
+}
+renderRosterTable(filtered,'fullRosterBody',true);
+}
+
+function renderGameSelector(){
+const container=document.getElementById('gameSelector');
+container.innerHTML='';
+braveGames.forEach((game,idx)=>{
+const isHome=game.home==='Canberra Brave';
+const opponent=isHome?game.away:game.home;
+const card=document.createElement('div');
+card.className='game-card';
+card.innerHTML=`<div class="date-badge">${game.date} 2026 &middot; ${game.time}</div><div class="matchup">${game.away} <span style="color:var(--brave-gold)">@</span> ${game.home}</div><div class="meta"><span>${isHome?'<span class="home-tag">HOME</span>':'<span class="away-tag">AWAY</span>'}</span><span>vs ${opponent}</span><span>${game.venue}</span></div>`;
+card.onclick=()=>selectGame(idx);
+container.appendChild(card);
+});
+}
+
+function selectGame(idx){
+document.querySelectorAll('.game-card').forEach(c=>c.classList.remove('selected'));
+document.querySelectorAll('.game-card')[idx].classList.add('selected');
+const game=braveGames[idx];
+const opponent=game.home==='Canberra Brave'?game.away:game.home;
+const isHome=game.home==='Canberra Brave';
+
+// Show detail panel, hide no-game message
+document.getElementById('gameDetailPanel').style.display='block';
+document.getElementById('noGameSelected').style.display='none';
+
+// Update matchup header
+document.getElementById('detailAwayTeam').textContent=game.away;
+document.getElementById('detailHomeTeam').textContent=game.home;
+document.getElementById('detailAwayRecord').textContent=teamData[game.away]?.record||'';
+document.getElementById('detailHomeRecord').textContent=teamData[game.home]?.record||'';
+document.getElementById('detailDate').textContent=`📅 ${game.date} 2026 at ${game.time}`;
+document.getElementById('detailVenue').textContent=`📍 ${game.venue}`;
+document.getElementById('detailRound').textContent=`🏒 Round ${game.round}`;
+
+// Form bars
+renderFormBar('detailAwayForm',teamData[game.away]?.form||[]);
+renderFormBar('detailHomeForm',teamData[game.home]?.form||[]);
+
+// Opponent stats
+const oppData=teamData[opponent];
+const statsGrid=document.getElementById('opponentStatsGrid');
+if(oppData){
+statsGrid.innerHTML=`<div class="stat-box"><div class="value">${oppData.gp}</div><div class="label">GP</div></div><div class="stat-box"><div class="value">${oppData.w}</div><div class="label">Wins</div></div><div class="stat-box"><div class="value">${oppData.pts}</div><div class="label">Points</div></div><div class="stat-box"><div class="value">${oppData.pos||getLeaguePos(opponent)}</div><div class="label">League Pos</div></div>`;
+}
+
+// Opponent form
+renderFormBar('opponentFormBar',oppData?.form||[]);
+const recentDiv=document.getElementById('opponentRecentResults');
+if(oppData){
+const formLabels={'W':'Win','L':'Loss','OTW':'OT Win','OTL':'OT Loss'};
+const formText=oppData.form.map((r,i)=>`${formLabels[r]||r}`).join(' &rarr; ');
+recentDiv.innerHTML=`Last 5: <strong style="color:var(--brave-gold)">${formText}</strong>`;
+}
+
+// Head to head
+document.getElementById('h2hOpponent').textContent=opponent;
+const h2hDiv=document.getElementById('h2hContent');
+h2hDiv.innerHTML='';
+const h2hRows=[
+{label:"2026 Season Meetings",value:getMeetingsCount(opponent)},
+{label:"Brave Record vs "+opponent,value:getH2HRecord(opponent)},
+{label:"Last Meeting",value:getLastMeeting(opponent,idx)},
+{label:"Brave at this Venue",value:getVenueRecord(game.venue,isHome)}
+];
+h2hRows.forEach(r=>{
+const div=document.createElement('div');
+div.className='h2h-row';
+div.innerHTML=`<span>${r.label}</span><span style="color:var(--brave-gold);font-weight:700">${r.value}</span>`;
+h2hDiv.appendChild(div);
+});
+
+// Opponent watch list
+const watchGrid=document.getElementById('opponentWatchGrid');
+watchGrid.innerHTML='';
+if(oppData&&oppData.keyPlayers){
+oppData.keyPlayers.forEach(player=>{
+const card=document.createElement('div');
+card.className='player-watch-card';
+card.innerHTML=`<div class="name">${player.split(' (')[0]}</div><div class="details">${opponent}</div><div class="notes">${player}</div>`;
+watchGrid.appendChild(card);
+});
+}
+
+// Talking points
+const tpContainer=document.getElementById('talkingPointsContainer');
+tpContainer.innerHTML='';
+if(oppData&&oppData.talkingPoints){
+oppData.talkingPoints.forEach(tp=>{
+const div=document.createElement('div');
+div.className='talking-point';
+div.innerHTML=`<p>${tp}</p>`;
+tpContainer.appendChild(div);
+});
+}
+// Add Brave talking points too
+const braveTP=teamData['Canberra Brave'].talkingPoints;
+braveTP.forEach(tp=>{
+const div=document.createElement('div');
+div.className='talking-point';
+div.innerHTML=`<p>${tp}</p>`;
+tpContainer.appendChild(div);
+});
+
+// Venue notes
+const venueDiv=document.getElementById('venueNotesContainer');
+const vInfo=venueInfo[game.venue];
+if(vInfo){
+venueDiv.innerHTML=`<div class="venue-note"><strong>${game.venue}</strong> | ${vInfo.city}<br>Capacity: ${vInfo.capacity} | Surface: ${vInfo.surface}<br><br>${vInfo.notes}</div>`;
+}
+
+// Key stats
+const statsDiv=document.getElementById('keyStatsContainer');
+statsDiv.innerHTML=`<div class="talking-point"><strong>Points System</strong><p>W = 3 pts | OTW = 2 pts | OTL = 1 pt | L = 0 pts<br>Top 6 qualify for playoffs (28-30 Aug at O'Brien Icehouse)</p></div><div class="talking-point"><strong>Brave Current Standing</strong><p>8th place with 9 points from 9 games. Need to climb into top 6 for playoff qualification.</p></div><div class="talking-point"><strong>Commentator Reminder</strong><p>Check <a href="https://www.theaihl.com/leagues/stats_hockey.cfm?clientid=3856&leagueid=11464" target="_blank" style="color:var(--brave-gold)">live stats</a> for updated player stats before puck drop. AIHL.TV has live stream.</p></div>`;
+}
+
+function renderFormBar(containerId,formArray){
+const container=document.getElementById(containerId);
+container.innerHTML='';
+formArray.forEach(r=>{
+const dot=document.createElement('div');
+dot.className=`form-dot form-${r.toLowerCase()}`;
+dot.textContent=r;
+container.appendChild(dot);
+});
+}
+
+function getLeaguePos(team){
+const positions={"Newcastle Northstars":1,"Perth Thunder":2,"Sydney Ice Dogs":3,"Melbourne Mustangs":4,"Central Coast Rhinos":5,"Sydney Bears":6,"Brisbane Lightning":7,"Canberra Brave":8,"Melbourne Ice":9,"Adelaide Adrenaline":10};
+return positions[team]||'-';
+}
+
+function getMeetingsCount(opponent){
+const meetings={"Perth Thunder":2,"Newcastle Northstars":2,"Melbourne Ice":1,"Melbourne Mustangs":1,"Sydney Ice Dogs":1,"Central Coast Rhinos":1,"Adelaide Adrenaline":2,"Sydney Bears":0,"Brisbane Lightning":0};
+return meetings[opponent]!==undefined?meetings[opponent]+' game(s) played':'First meeting';
+}
+
+function getH2HRecord(opponent){
+const records={"Perth Thunder":"0-2-0","Newcastle Northstars":"0-2-0","Melbourne Ice":"0-1-0","Melbourne Mustangs":"0-1-0","Sydney Ice Dogs":"0-1-0","Central Coast Rhinos":"0-1-0","Adelaide Adrenaline":"0-0-0","Sydney Bears":"0-0-0","Brisbane Lightning":"0-0-0"};
+return records[opponent]||'TBD';
+}
+
+function getLastMeeting(opponent,currentIdx){
+// Find previous meeting
+for(let i=currentIdx-1;i>=0;i--){
+if(braveGames[i].away===opponent||braveGames[i].home===opponent){
+return `${braveGames[i].date} 2026 at ${braveGames[i].venue}`;
+}
+}
+return 'First meeting of 2026';
+}
+
+function getVenueRecord(venue,isHome){
+if(venue==="AIS Arena")return "Home record: Check live stats";
+if(venue==="Perth Ice Arena")return "0-2-0 this season (2 losses)";
+if(venue==="Hunter Ice Skating Stadium")return "0-2-0 this season (2 losses)";
+if(venue==="O'Brien Icehouse")return "0-2-0 this season (2 losses)";
+if(venue==="Macquarie Ice Rink")return "0-1-0 this season";
+if(venue==="Erina Ice Arena")return "0-1-0 this season";
+if(venue==="Ice Arena Adelaide")return "First visit this season";
+if(venue==="Iceworld Boondall")return "First visit this season";
+return "Check stats";
+}
+
+function renderSchedule(filter){
+const tbody=document.getElementById('scheduleBody');
+tbody.innerHTML='';
+let games=braveGames;
+if(filter==='home')games=braveGames.filter(g=>g.home==='Canberra Brave');
+else if(filter==='away')games=braveGames.filter(g=>g.away==='Canberra Brave');
+else if(filter==='upcoming'){
+const today=new Date('2026-06-27');
+const monthMap={'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11};
+games=braveGames.filter(g=>{
+const [day,month]=g.date.split(' ');
+const gameDate=new Date(2026,monthMap[month],parseInt(day));
+return gameDate>=today;
+});
+}
+games.forEach(g=>{
+const isHome=g.home==='Canberra Brave';
+const row=document.createElement('tr');
+row.innerHTML=`<td><strong>${g.date}</strong></td><td>${g.time}</td><td style="color:${g.away==='Canberra Brave'?'var(--brave-gold)':'inherit'}">${g.away}</td><td style="color:${g.home==='Canberra Brave'?'var(--brave-gold)':'inherit'}">${g.home}</td><td>${g.venue}${isHome?' [HOME]':''}</td>`;
+tbody.appendChild(row);
+});
+}
+
+function filterSchedule(filter,btn){
+document.querySelectorAll('#schedule .filter-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+renderSchedule(filter);
+}
+
+function renderInactive(){
+const container=document.getElementById('braveInactive');
+container.innerHTML='';
+braveInactive.forEach(p=>{
+const div=document.createElement('div');
+div.style.cssText='padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem;color:rgba(255,255,255,0.7)';
+div.innerHTML=`<strong style="color:#e74c3c">${p.name}</strong> - ${p.notes}`;
+container.appendChild(div);
+});
+}
+
+function saveNotes(){
+const notes=document.getElementById('commentaryNotes').value;
+localStorage.setItem('aihl_brave_notes',notes);
+document.getElementById('saveStatus').innerHTML='<span style="color:#2ecc71">Notes saved!</span>';
+setTimeout(()=>document.getElementById('saveStatus').innerHTML='',3000);
+}
+
+function clearNotes(){
+if(confirm('Clear all notes?')){
+document.getElementById('commentaryNotes').value='';
+localStorage.removeItem('aihl_brave_notes');
+document.getElementById('saveStatus').innerHTML='<span style="color:#f39c12">Cleared.</span>';
+setTimeout(()=>document.getElementById('saveStatus').innerHTML='',3000);
+}
+}
+
+function exportNotes(){
+const notes=document.getElementById('commentaryNotes').value;
+if(!notes){alert('No notes to export!');return;}
+const blob=new Blob([notes],{type:'text/plain'});
+const url=URL.createObjectURL(blob);
+const a=document.createElement('a');
+a.href=url;
+a.download='brave_commentary_notes.txt';
+a.click();
+URL.revokeObjectURL(url);
+}
+
+function loadSavedNotes(){
+const saved=localStorage.getItem('aihl_brave_notes');
+if(saved)document.getElementById('commentaryNotes').value=saved;
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded',()=>{
+renderRosterTable(braveRoster,'braveRosterBody',false);
+renderRosterTable(braveRoster,'fullRosterBody',true);
+renderGameSelector();
+renderSchedule('all');
+renderInactive();
+loadSavedNotes();
+});
+</script>
+</body>
+</html>
