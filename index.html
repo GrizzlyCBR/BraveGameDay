@@ -91,7 +91,7 @@ header{height:68px;background:#06090d;border-bottom:1px solid var(--line);displa
   The browser talks to YOUR Cloudflare Worker, not directly to the AIHL site.
   Change WORKER_URL after deployment.
 */
-const WORKER_URL = localStorage.getItem("aihlWorkerUrl") || "PASTE-YOUR-WORKER-URL-HERE";
+const WORKER_URL = localStorage.getItem("aihlWorkerUrl") || "bravegameday-proxy.grizzly-cbr.workers.dev";
 const REFRESH_MS = 7000;
 
 let timer=null, liveData=null, selectedId=localStorage.getItem("selectedPlayer");
