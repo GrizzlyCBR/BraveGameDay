@@ -25,7 +25,7 @@
 <div id="broadcast" class="broadcast"><div class="bInner"><div class="bHead"><div><span class="live">● LIVE</span> <span id="bStatus" class="muted"></span></div><button id="exitBroadcast">Exit</button></div><div class="bScore"><div class="bTeam"><span id="bHomeName">CANBERRA BRAVE</span><b id="bHomeScore">0</b></div><div class="bClock"><b id="bPeriod">—</b><br><span id="bClock">--:--</span></div><div class="bTeam away"><b id="bAwayScore">0</b><span id="bAwayName">AWAY TEAM</span></div></div><div class="bMain"><div class="bCard"><div class="label">Latest event</div><div id="bLatest" class="latest">Waiting for game activity...</div></div><div class="bCard"><div class="label">Player to watch</div><div id="bPlayer" class="short">Click a player in the main dashboard.</div></div><div class="bCard"><div class="label">Talking points</div><div id="bNotes" class="short">No notes yet.</div></div></div><div class="panel bEvents"><div class="panelHead"><h2>EVENTS</h2></div><div id="bEvents"></div></div></div></div>
 <script>
 /* CHANGE THIS after deploying the Cloudflare Worker. */
-const WORKER_URL="https://bravegameday.grizzly-cbr.workers.dev/";
+const WORKER_URL="https://bravegameday-proxy.grizzly-cbr.workers.dev/";
 const REFRESH_MS=7000;
 
 /* Update this list if AIHL teams change. */
